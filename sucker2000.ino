@@ -1,5 +1,5 @@
 boolean sensorOnEdge (uint8_t pin);
-void moveWheels(uint32_t velocity, uint8_t dir = HIGH);
+void moveWheels(uint8_t dir = HIGH);
 void turnWheels(uint8_t dir = HIGH, uint32_t velocity = 180);
 
 #define pinDirectionA 12 // A = linkse wiel
@@ -12,6 +12,7 @@ void turnWheels(uint8_t dir = HIGH, uint32_t velocity = 180);
 #define pinPiezo 8
 #define pinPowerTrigger 6
 #define pinPowerEcho 7
+#define pinSpeedPotentio 3
 
 #define edgeSensorThreshold 130  
 
@@ -24,8 +25,8 @@ void turnWheels(uint8_t dir = HIGH, uint32_t velocity = 180);
 #define TURN_LEFT LOW
 #define TURN_RIGHT HIGH
 #define TURN_DURATION 1500000 // 2 secs
-
 uint32_t turnStart;
+
 byte action;
 byte prevAction;
 byte turnDirection;
@@ -36,6 +37,7 @@ long powerDuration;
 uint32_t powerTimePast = 0;
 
 uint32_t startupTimePast = 0;
+#define STARTUP_DURATION 3500 // 3 secs
 
 void setup()
 {
@@ -79,26 +81,25 @@ void loop()
   switch (action) {
     case ACTION_STANDBY:
       Serial.println("Waiting to start");
-      Serial.println();
       break;
       
     case ACTION_STARTING:
       Serial.println("Starting");
-      if (millis() > (startupTimePast + 5000)) {
+      if (millis() > (startupTimePast + STARTUP_DURATION)) {
         action = ACTION_MOVE;
       }
       break;
             
     case ACTION_STOPPING:
       Serial.println("Stopping");
-      if (millis() > (startupTimePast + 5000)) {
+      if (millis() > (startupTimePast + STARTUP_DURATION)) {
         action = ACTION_STANDBY;
       }
       break;
       
     case ACTION_MOVE:
       Serial.println("Moving");
-      moveWheels(120, HIGH);
+      moveWheels();
       break;
       
     case ACTION_TURN:
@@ -132,9 +133,15 @@ void loop()
  
 }
 
-void moveWheels(uint32_t velocity, uint8_t dir)
+void moveWheels(uint8_t dir)
 {
   stopWheels();
+  
+  uint32_t velocity = analogRead(pinSpeedPotentio);
+  Serial.println(velocity);
+  velocity = map(velocity, 0, 1014, 50, 150);
+  
+  Serial.println(velocity);
   digitalWrite(pinDirectionA, dir);
   digitalWrite(pinDirectionB, dir);
   analogWrite(pinSpeedA, velocity);
