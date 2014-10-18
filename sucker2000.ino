@@ -1,3 +1,5 @@
+#include <Servo.h>
+
 uint32_t measure(uint8_t pin, uint32_t threshold = 3000);
 void moveWheels(uint32_t velocity, uint8_t dir = HIGH);
 void turnWheels(uint8_t dir = HIGH, uint32_t velocity = 150);
@@ -7,11 +9,23 @@ void turnWheels(uint8_t dir = HIGH, uint32_t velocity = 150);
 #define pinSpeedA 3
 #define pinSpeedB 11
 
+Servo sensorServo;
+
+#define pinSensorservo 5
+int servoAngle = 90;
+uint8_t servoDirection = true;
+uint32_t servoInterval = 10;
+
+uint32_t timepast = 0;
+
 void setup()
 {
   delay(500);
   pinMode(pinDirectionA, OUTPUT); 
   pinMode(pinDirectionB, OUTPUT);
+  sensorServo.attach(pinSensorservo);
+  sensorServo.write(servoAngle);
+  
   Serial.begin(9600);
   delay(1000);
 }
@@ -19,10 +33,12 @@ void setup()
 
 void loop()
 {
-
+  turnSensor();
+  
 // meten  
 //  Serial.println(measure(3), DEC);
 
+/*
   moveWheels(100);
   delay(1500);
   
@@ -37,10 +53,10 @@ void loop()
 
   turnWheels(LOW);
   delay(1000);
-
+*/
 }
 
-uint32_t measure(uint8_t pin, uint32_t threshold) 
+uint32_t measure(uint8_t pin, uint8_t threshold) 
 {
   pinMode(pin, OUTPUT);  
   digitalWrite(pin, HIGH);
@@ -57,8 +73,23 @@ uint32_t measure(uint8_t pin, uint32_t threshold)
   return t1 - t0;
 }
 
+void turnSensor()
+{
+  if (millis() >= (timepast + servoInterval)) {
+    timepast = millis();
+    servoAngle = (servoDirection) ? (servoAngle + 1) : (servoAngle - 1);
+    if (servoAngle >= 130) {
+      servoDirection = false;
+    }
+    if (servoAngle <= 50) {
+      servoDirection = true; 
+    }
+    sensorServo.write(servoAngle);
+    Serial.println(timepast);
+  }  
+}
 
-void moveWheels(uint32_t velocity, uint8_t dir)
+void moveWheels(uint8_t velocity, uint8_t dir)
 {
   stopWheels();
   digitalWrite(pinDirectionA, dir);
@@ -71,10 +102,10 @@ void stopWheels()
 {
   analogWrite(pinSpeedA, 0);
   analogWrite(pinSpeedB, 0);
-  delay(50);
+  //delay(50);
 }
 
-void turnWheels(uint8_t dir, uint32_t velocity)
+void turnWheels(uint8_t dir, uint8_t velocity)
 {
   stopWheels();
   if (dir == 1) {
