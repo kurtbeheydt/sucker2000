@@ -1,21 +1,23 @@
+//#include <Servo.h>
+
 boolean sensorOnEdge (uint8_t pin);
 void moveWheels(uint32_t velocity, uint8_t dir = HIGH);
-void turnWheels(uint8_t dir = HIGH, uint32_t velocity = 150);
+void turnWheels(uint8_t dir = HIGH, uint32_t velocity = 180);
 
 #define pinDirectionA 12 // A = linkse wiel
 #define pinDirectionB 13
 #define pinSpeedA 3
 #define pinSpeedB 11
-#define lefEdgeSensor 4             
-#define rightEdgeSensor 5              
-#define edgeSensorThreshold 1000  
+#define rightEdgeSensor 4             
+#define leftEdgeSensor 5              
+#define edgeSensorThreshold 130  
 
 #define ACTION_MOVE 0
 #define ACTION_TURN 1
 
 #define TURN_LEFT LOW
 #define TURN_RIGHT HIGH
-#define TURN_DURATION 2000000 // 2 secs
+#define TURN_DURATION 1500000 // 2 secs
 
 
 uint32_t turnStart;
@@ -23,11 +25,24 @@ byte action;
 byte prevAction;
 byte turnDirection;
 
+/*
+Servo sensorServo;
+
+#define pinSensorservo 6
+int servoAngle = 90;
+uint8_t servoDirection = true;
+uint32_t servoInterval = 10;
+*/
+
+uint32_t timepast = 0;
+
 void setup()
 {
-  delay(500);
   pinMode(pinDirectionA, OUTPUT); 
   pinMode(pinDirectionB, OUTPUT);
+  //sensorServo.attach(pinSensorservo);
+  //sensorServo.write(servoAngle);
+  
   Serial.begin(9600);
   delay(1000);
   
@@ -38,23 +53,28 @@ void setup()
 
 void loop()
 {
+  //turnSensor();
+  
+
   // check what to do
-  if (sensorOnEdge(lefEdgeSensor)) {
-     Serial.println("LEFT OVER EDGE");
+  if (sensorOnEdge(rightEdgeSensor)) {
+     Serial.println("RIGHT OVER EDGE");
      action = ACTION_TURN;
      turnDirection = TURN_RIGHT;
-  } else if (sensorOnEdge(rightEdgeSensor)) {
-     Serial.println("RIGHT OVER EDGE");
+  }
+  if (sensorOnEdge(leftEdgeSensor)) {
+     Serial.println("LEFT OVER EDGE");
       action = ACTION_TURN;
       turnDirection = TURN_LEFT;
   }
+  //delay(1000);
   
   // start or continue the action
   switch (action) {
     
     case ACTION_MOVE:
       Serial.println("Moving");
-      moveWheels(100, LOW);
+      moveWheels(120, HIGH);
       break;
       
     case ACTION_TURN:
@@ -83,9 +103,28 @@ void loop()
       break;
       
   }
+  
   prevAction = action;
  
 }
+
+/*
+void turnSensor()
+{
+  if (millis() >= (timepast + servoInterval)) {
+    timepast = millis();
+    servoAngle = (servoDirection) ? (servoAngle + 1) : (servoAngle - 1);
+    if (servoAngle >= 130) {
+      servoDirection = false;
+    }
+    if (servoAngle <= 50) {
+      servoDirection = true; 
+    }
+    sensorServo.write(servoAngle);
+    //Serial.println(timepast);
+  }  
+}
+*/
 
 void moveWheels(uint32_t velocity, uint8_t dir)
 {
@@ -100,13 +139,13 @@ void stopWheels()
 {
   analogWrite(pinSpeedA, 0);
   analogWrite(pinSpeedB, 0);
-  delay(50);
+  //delay(50);
 }
 
 void turnWheels(uint8_t dir, uint32_t velocity)
 {
   stopWheels();
-  if (dir == 1) {
+  if (dir == 0) {
     digitalWrite(pinDirectionA, HIGH);
     digitalWrite(pinDirectionB, LOW);
   } else {
@@ -115,8 +154,6 @@ void turnWheels(uint8_t dir, uint32_t velocity)
   }
   analogWrite(pinSpeedA, velocity);
   analogWrite(pinSpeedB, velocity);
-  // XXX variabele tijd maken om de draaihoek te varieren
-  delay(500);
 }
 
 // returns true if the sensor is over the edge (for the given edge pin)
@@ -133,6 +170,10 @@ boolean sensorOnEdge(uint8_t pin)
     dif = micros() - t0;
     if (dif > edgeSensorThreshold) break;
   }
+  
+  Serial.print(pin);
+  Serial.print(": ");
+  Serial.println(dif);
   return dif > edgeSensorThreshold;
 
 }
