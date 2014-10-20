@@ -13,6 +13,7 @@ void turnWheels(uint8_t dir = HIGH, uint32_t velocity = 180);
 #define pinPowerTrigger 6
 #define pinPowerEcho 7
 #define pinSpeedPotentio 3
+#define pinMotors 10
 
 #define edgeSensorThreshold 130  
 
@@ -46,6 +47,7 @@ void setup()
   pinMode(pinDirectionB, OUTPUT);
   pinMode(pinPowerTrigger, OUTPUT);
   pinMode(pinPowerEcho, INPUT);
+  pinMode(pinMotors, OUTPUT);
   
   Serial.begin(9600);
   delay(1000);
@@ -81,16 +83,20 @@ void loop()
   switch (action) {
     case ACTION_STANDBY:
       Serial.println("Waiting to start");
+      digitalWrite(pinMotors, LOW);
       break;
       
     case ACTION_STARTING:
       Serial.println("Starting");
+      digitalWrite(pinMotors, LOW);
+
       if (millis() > (startupTimePast + STARTUP_DURATION)) {
         action = ACTION_MOVE;
       }
       break;
             
     case ACTION_STOPPING:
+      digitalWrite(pinMotors, LOW);
       Serial.println("Stopping");
       if (millis() > (startupTimePast + STARTUP_DURATION)) {
         action = ACTION_STANDBY;
@@ -98,11 +104,13 @@ void loop()
       break;
       
     case ACTION_MOVE:
+      digitalWrite(pinMotors, HIGH);
       Serial.println("Moving");
       moveWheels();
       break;
       
     case ACTION_TURN:
+      digitalWrite(pinMotors, HIGH);
       // init in case of start turning
       if (prevAction == ACTION_MOVE) {
         Serial.println("Start turning");
@@ -139,7 +147,7 @@ void moveWheels(uint8_t dir)
   
   uint32_t velocity = analogRead(pinSpeedPotentio);
   Serial.println(velocity);
-  velocity = map(velocity, 0, 1014, 50, 150);
+  velocity = map(velocity, 0, 1014, 50, 180);
   
   Serial.println(velocity);
   digitalWrite(pinDirectionA, dir);
