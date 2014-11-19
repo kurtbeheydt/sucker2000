@@ -147,7 +147,7 @@ void moveWheels(uint8_t dir)
   
   uint32_t velocity = analogRead(pinSpeedPotentio);
   Serial.println(velocity);
-  velocity = map(velocity, 0, 1014, 50, 180);
+  velocity = map(velocity, 0, 1014, 50, 250);
   
   Serial.println(velocity);
   digitalWrite(pinDirectionA, dir);
